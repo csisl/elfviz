@@ -3,48 +3,69 @@
 elfviz is a command line interface tool to interact with ELF 
 binary files.  
 
-### usage
+### installation
 
-Options for the CLI can be seen by running `python3 main.py --help`.  
+`click` and `pyelftools` are required installations.  
 
 ```
-(venv) elfviz % python3 main.py --help
-Usage: main.py [OPTIONS] COMMAND [ARGS]...
+pip install click
+pip install pyelftools
+```
+
+### usage
+
+Options for the CLI can be seen by running `python3 elfviz.py --help`.  
+
+```
+(venv) elfviz % python3 elfviz.py --help
+Usage: elfviz.py [OPTIONS] FILE COMMAND [ARGS]...
+
+Options:
+  --debug BOOLEAN
+  --help           Show this message and exit.
+
+Commands:
+  all-sections
+  section-header
+  symbol-offset
+
+```
+
+A path to the file that should be examined is a required argument
+for the main program.  
+
+elfviz can be run with debugging when the `--debug` flag is passed. 
+
+Supported functionality can be seen under `Commands`. 
+
+Furthermore, each sub-command has their own unique set of arguments and options.
+These can be seen by running the command along with the `--help` tag.  
+
+```
+(venv) elfviz % python3 elfviz.py examples/hello section-header --help
+Usage: elfviz.py FILE section-header [OPTIONS] SECTION
 
 Options:
   --help  Show this message and exit.
-
-Commands:
-  section-info
-  symbol-offset
 ```
 
-Obtaining section information, and the offset of a symbol in an
-ELF file are supported.  
+### examples
 
-Furthermore, each sub-command has their own unique set of 
-options. These options can be seen by running the command
-along with the `--help` tag.  
+Below, the `.got` section header details are obtained with the `section-header`
+command.  
 
 ```
-(venv) elfviz % python3 main.py section-info --help                                 
-Usage: main.py section-info [OPTIONS]
-
-Options:
-  --file TEXT
-  --section TEXT
-  --log TEXT
-  --help          Show this message and exit.
+(venv) elfviz % python3 elfviz.py examples/hello section-header .got
+sh_name:        231
+sh_type:        SHT_PROGBITS
+sh_flags:       3
+sh_addr:        7048952
+sh_offset:      757496
+sh_size:        248
+sh_link:        0
+sh_info:        0
+sh_addralign:   8
+sh_entsize:     0
 ```
-
-A sample run to see where the symbol `open` resides in the 
-file can be seen below:  
-
-```
-(venv) elfviz % python3 main.py symbol-offset --file examples/hello --symbol open
-[+] offset: 297696
-```
-
-Debugging levels can be set with the `--log` parameter. 
 
 
