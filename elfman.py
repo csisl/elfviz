@@ -3,8 +3,9 @@ from elftools.construct import Container
 from elftools.elf.elffile import ELFFile
 from typing import BinaryIO
 import logging
+import pprint
 
-from elftools.elf.sections import Symbol, SymbolTableIndexSection, Section
+from elftools.elf.sections import Symbol, Section
 
 
 class ELFMan:
@@ -56,6 +57,19 @@ class ELFMan:
     def show_symbols(self):
         for symbol in self.symtab.iter_symbols():
             print(symbol.name)
+
+    def show_segments(self):
+        # TODO: make me pretty
+        for segment in self.elffile.iter_segments():
+            print(segment.header)
+
+    def show_elf_header(self):
+        header = self.get_elf_header()
+        for h in header:
+            print("{}:\t{}".format(h, header[h]))
+
+    def get_elf_header(self) -> Container:
+        return self.elffile.header
 
     def get_section_symbol_in(self, symbol: str) -> Section:
         """
