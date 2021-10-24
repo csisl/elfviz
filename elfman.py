@@ -21,16 +21,15 @@ class ELFMan:
     ST_VALUE: str = "st_value"
     ST_SHNDX: str = "st_shndx"
 
-    def __init__(self, file: str, log=None):
+    def __init__(self, file: str, debug=False):
         self.file = ELFMan.get_file(file)
         self.elffile = ELFMan.get_elf(self.file)
         self.symtab = self.elffile.get_section_by_name(ELFMan.SYMTAB)
-        if log:
-            self._set_logging(log)
+        if debug:
+            self._enable_debug()
 
-    def _set_logging(self, log):
-        levels = {"debug": logging.DEBUG, "info": logging.INFO}
-        logging.basicConfig(level=levels[log])
+    def _enable_debug(self):
+        logging.basicConfig(level=logging.DEBUG)
 
     @staticmethod
     def get_file(file: str) -> BinaryIO:
@@ -49,6 +48,14 @@ class ELFMan:
             raise("[-] file is not an ELF! [{}]".format(e))
 
         return elffile
+
+    def show_sections(self):
+        for section in self.elffile.iter_sections():
+            print(section.name)
+
+    def show_symbols(self):
+        for symbol in self.symtab.iter_symbols():
+            print(symbol.name)
 
     def get_section_symbol_in(self, symbol: str) -> Section:
         """
@@ -131,14 +138,6 @@ class ELFMan:
         section_offset = self._get_section_offset(section)
         sym_offset = sym_addr - section_addr + section_offset
         return sym_offset
-
-    def show_sections(self):
-        for section in self.elffile.iter_sections():
-            print(section.name)
-
-    def show_symbols(self):
-        for symbol in self.symtab.iter_symbols():
-            print(symbol.name)
 
     def __del__(self):
         """
