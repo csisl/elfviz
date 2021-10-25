@@ -4,7 +4,7 @@ import click
 
 @click.group()
 @click.argument("file", type=str)
-@click.option("--debug", default=False)
+@click.option("--debug", is_flag=True)
 @click.pass_context
 def main(ctx, file, debug):
     ctx.obj['FILE'] = file

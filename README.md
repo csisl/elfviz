@@ -21,7 +21,7 @@ Options for the CLI can be seen by running `python3 elfviz.py --help`.
 Usage: elfviz.py [OPTIONS] FILE COMMAND [ARGS]...
 
 Options:
-  --debug BOOLEAN
+  --debug 
   --help           Show this message and exit.
 
 Commands:
@@ -34,7 +34,7 @@ Commands:
 A path to the file that should be examined is a required argument
 for the main program.  
 
-elfviz can be run with debugging when the `--debug` flag is passed. 
+elfviz can be run with debugging when the `--debug` flag is passed as an OPTION.
 
 Supported functionality can be seen under `Commands`. 
 
@@ -68,4 +68,14 @@ sh_addralign:   8
 sh_entsize:     0
 ```
 
+Getting a symbol offset in the file with a debugging level set:  
+
+```
+(venv) elfviz % python elfviz.py --debug examples/hello symbol-offset open
+DEBUG:root:[!] symbol address: 0x448ae0
+DEBUG:root:[!] symbol at section index 6
+DEBUG:root:[!] symbol [ open ] in section: .plt
+DEBUG:root:[!] section address: 0x400418
+[+] offset: 297696
+```
 
