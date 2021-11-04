@@ -3,7 +3,6 @@ from elftools.construct import Container
 from elftools.elf.elffile import ELFFile
 from typing import BinaryIO
 import logging
-import pprint
 
 from elftools.elf.sections import Symbol, Section
 
@@ -14,9 +13,10 @@ class ELFMan:
         file: the binary file to examine
 
     Attributes:
-        file: BinaryIO  -a stream of data from an binary file
+        file: BinaryIO  - a stream of data from an binary file
         elffile: ELFFile - the elf file object to represent the binary file
         symtab: SymbolTableSection - the symbol table object
+        header: Container - the ELF header
     """
     SYMTAB: str = ".symtab"
     ST_VALUE: str = "st_value"
@@ -26,6 +26,7 @@ class ELFMan:
         self.file = ELFMan.get_file(file)
         self.elffile = ELFMan.get_elf(self.file)
         self.symtab = self.elffile.get_section_by_name(ELFMan.SYMTAB)
+        self.header = self.elffile.header
         if debug:
             self._enable_debug()
 
@@ -64,12 +65,8 @@ class ELFMan:
             print(segment.header)
 
     def show_elf_header(self):
-        header = self.get_elf_header()
-        for h in header:
-            print("{}:\t{}".format(h, header[h]))
-
-    def get_elf_header(self) -> Container:
-        return self.elffile.header
+        for h in self.header:
+            print("{}:\t{}".format(h, self.header[h]))
 
     def get_section_symbol_in(self, symbol: str) -> Section:
         """
@@ -85,8 +82,8 @@ class ELFMan:
         """
         Get the section index of the symbol with the `st_shndx` field
         """
-        elf_sym = self.get_symbol_entry(symbol)
-        index = elf_sym.get(ELFMan.ST_SHNDX)
+        entry = self.get_symbol_entry(symbol)
+        index = entry.get(ELFMan.ST_SHNDX)
         logging.debug("[!] symbol at section index {}".format(index))
         return index
 
@@ -100,17 +97,11 @@ class ELFMan:
                 return section
             ii += 1
 
+        raise Exception("[-] section index not found: {}".format(index))
+
     def get_section_header(self, section: str) -> Container:
         header = self.elffile.get_section_by_name(section).header
         return header
-
-    def _get_section_addr(self, section: Section) -> int:
-        section_addr = int(section.header.sh_addr)
-        logging.debug("[!] section address: {}".format(hex(section_addr)))
-        return section_addr
-
-    def _get_section_offset(self, section: Section) -> int:
-        return section.header.sh_offset
 
     def get_symbol_entry(self, symbol: str) -> Container:
         """
@@ -122,36 +113,44 @@ class ELFMan:
           - st_shndx
           - st_size
         """
-        elf_sym_list: Symbol = self.symtab.get_symbol_by_name(symbol)
+        symbol_data: Symbol = self.symtab.get_symbol_by_name(symbol)
 
-        try:
-            elf_sym = elf_sym_list[0]
-        except TypeError as e:
-            print("[-] unable to locate symbol: {}".format(symbol))
-            raise
+        if symbol_data is None:
+            raise TypeError("[-] no symbol: {}".format(symbol))
 
-        return elf_sym.entry
+        symbol_entry = symbol_data[0].entry
+
+        return symbol_entry
 
     def get_symbol_address(self, symbol: str) -> int:
         """
         Get the address for the provided symbol
         """
         entry = self.get_symbol_entry(symbol)
-        symbol_addr = int(entry.get(ELFMan.ST_VALUE))
-        logging.debug("[!] symbol address: {}".format(hex(symbol_addr)))
-        return symbol_addr
+        symbol_address = int(entry.get(ELFMan.ST_VALUE))
+        logging.debug("[!] symbol address: {}".format(hex(symbol_address)))
+        return symbol_address
 
     def get_symbol_offset(self, symbol: str) -> int:
         """
         Get the offset of a symbol in a file with the following formula:
         symbol address - section address + section offset in file
         """
-        sym_addr = self.get_symbol_address(symbol)
+        symbol_address = self.get_symbol_address(symbol)
         section = self.get_section_symbol_in(symbol)
-        section_addr = self._get_section_addr(section)
+        section_address = self._get_section_addr(section)
         section_offset = self._get_section_offset(section)
-        sym_offset = sym_addr - section_addr + section_offset
-        return sym_offset
+
+        symbol_offset = symbol_address - section_address + section_offset
+        return symbol_offset
+
+    def _get_section_addr(self, section: Section) -> int:
+        section_addr = int(section.header.sh_addr)
+        logging.debug("[!] section address: {}".format(hex(section_addr)))
+        return section_addr
+
+    def _get_section_offset(self, section: Section) -> int:
+        return section.header.sh_offset
 
     def __del__(self):
         """
@@ -159,5 +158,5 @@ class ELFMan:
         """
         try:
             self.file.close()
-        except:
+        except IOError:
             pass
