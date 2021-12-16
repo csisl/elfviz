@@ -10,6 +10,7 @@ binary files.
 ```
 pip install click
 pip install pyelftools
+pip install ipython
 ```
 
 ### usage
@@ -48,6 +49,37 @@ Usage: elfviz.py FILE section-header [OPTIONS] SECTION
 Options:
   --help  Show this message and exit.
 ```
+
+### interactive
+
+An interactive mode has been added to facilitate running multiple
+commands on the ELF binary in one session. The main object to operate on
+is called `elf`.
+
+```
+(venv) elfviz % python3 elfviz.py examples/hello interactive
+
+In [1]: help(elf)
+
+
+In [2]: elf.show_elf_header()
+e_ident:        Container({'EI_MAG': [127, 69, 76, 70], 'EI_CLASS': 'ELFCLASS64', 'EI_DATA': 'ELFDATA2LSB', 'EI_VERSION': 'EV_CURRENT', 'EI_OSABI': 'ELFOSABI_LINUX', 'EI_ABIVERSION': 0})
+e_type: ET_EXEC
+e_machine:      EM_X86_64
+e_version:      EV_CURRENT
+e_entry:        4196944
+e_phoff:        64
+e_shoff:        845136
+e_flags:        0
+e_ehsize:       64
+e_phentsize:    56
+e_phnum:        6
+e_shentsize:    64
+e_shnum:        38
+e_shstrndx:     37
+```  
+
+To see a full list of available methods use `dir(elf)` or `help(elf)`.  
 
 ### examples
 

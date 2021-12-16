@@ -1,3 +1,5 @@
+import IPython as IPython
+
 from elfman import ELFMan
 import click
 
@@ -62,6 +64,14 @@ def all_sections(ctx):
 @click.pass_context
 def all_segments(ctx):
     ctx.obj['ELF'].show_segments()
+
+
+@main.command()
+@click.pass_context
+def interactive(ctx):
+    elf = ctx.obj['ELF']
+    IPython.start_ipython(argv=[], user_ns=locals())
+
 
 if __name__ == '__main__':
     main(obj={})
