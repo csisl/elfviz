@@ -1,6 +1,6 @@
 import IPython as IPython
 
-from elfman import ELFMan
+from elfman import elfman
 import click
 
 
@@ -11,7 +11,7 @@ import click
 def main(ctx, file, debug):
     ctx.obj['FILE'] = file
     ctx.obj['DEBUG'] = debug
-    ctx.obj['ELF'] = ELFMan(file, debug)
+    ctx.obj['ELF'] = elfman.ELFMan(file, debug)
 
 
 @main.command()
@@ -71,6 +71,15 @@ def all_segments(ctx):
 def interactive(ctx):
     elf = ctx.obj['ELF']
     IPython.start_ipython(argv=[], user_ns=locals())
+
+
+@main.command()
+@click.argument("start", type=int)
+@click.argument("size", type=int)
+@click.pass_context
+def read_bytes(ctx, start, size):
+    elf = ctx.obj['ELF']
+    elf.read_bytes(start, size)
 
 
 if __name__ == '__main__':

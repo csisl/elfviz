@@ -152,6 +152,19 @@ class ELFMan:
     def _get_section_offset(self, section: Section) -> int:
         return section.header.sh_offset
 
+    def read_bytes(self, start: int, size: int):
+        """
+        Read the `size` of bytes from the `start` position
+          * Make sure the file pointer gets reset at the end of the function
+
+        :param start: offset in file to start reading bytes
+        :param size: how many bytes to read
+        """
+        self.file.seek(start)
+        data = self.file.read(size)
+        print(data)
+        self.file.seek(0)
+
     def __del__(self):
         """
         Make sure we clean up and close the open file
