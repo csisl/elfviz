@@ -1,5 +1,6 @@
 import IPython as IPython
 
+from typing import Union
 from elfman import elfman
 import click
 
@@ -74,12 +75,21 @@ def interactive(ctx):
 
 
 @main.command()
-@click.argument("start", type=int)
+@click.argument("offset", type=int)
+@click.argument("data", type=str)
+@click.pass_context
+def write_bytes(ctx, offset, data):
+    elf = ctx.obj['ELF']
+    elf.write_bytes(offset, data)
+
+
+@main.command()
+@click.argument("offset", type=int)
 @click.argument("size", type=int)
 @click.pass_context
-def read_bytes(ctx, start, size):
+def read_bytes(ctx, offset, size):
     elf = ctx.obj['ELF']
-    elf.read_bytes(start, size)
+    elf.read_bytes(offset, size)
 
 
 if __name__ == '__main__':

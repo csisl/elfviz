@@ -1,18 +1,24 @@
 from elftools.common.exceptions import ELFParseError
 from elftools.construct import Container
 from elftools.elf.elffile import ELFFile
-from typing import BinaryIO
+from typing import BinaryIO, Union
+from pathlib import Path
 import logging
 
 from elftools.elf.sections import Symbol, Section
 
+CRESET  = '\33[0m'
+CGREEN  = '\33[32m'
+CBLUE   = '\33[34m'
 
 class ELFMan:
     """
     Args:
         file: the binary file to examine
+        debug: boolean to run in debug mode or not
 
     Attributes:
+        file_name: str - the name of the file
         file: BinaryIO  - a stream of data from an binary file
         elffile: ELFFile - the elf file object to represent the binary file
         symtab: SymbolTableSection - the symbol table object
@@ -23,22 +29,20 @@ class ELFMan:
     ST_SHNDX: str = "st_shndx"
 
     def __init__(self, file: str, debug=False):
+        self.file_name = file
         self.file = ELFMan.get_file(file)
         self.elffile = ELFMan.get_elf(self.file)
         self.symtab = self.elffile.get_section_by_name(ELFMan.SYMTAB)
         self.header = self.elffile.header
         if debug:
-            self._enable_debug()
-
-    def _enable_debug(self):
-        logging.basicConfig(level=logging.DEBUG)
+            enable_debug()
 
     @staticmethod
     def get_file(file: str) -> BinaryIO:
         try:
-            open_file = open(file, "rb")
+            open_file = open(file, "rb+")
         except IOError as e:
-            raise("[-] error reading binary file [{}]".format(e))
+            raise Exception(f"[-] error reading binary file [{e}]")
 
         return open_file
 
@@ -47,7 +51,7 @@ class ELFMan:
         try:
             elffile = ELFFile(file_stream)
         except ELFParseError as e:
-            raise("[-] file is not an ELF! [{}]".format(e))
+            raise Exception(f"[-] file is not an ELF! [{e}]")
 
         return elffile
 
@@ -66,7 +70,7 @@ class ELFMan:
 
     def show_elf_header(self):
         for h in self.header:
-            print("{}:\t{}".format(h, self.header[h]))
+            print(f"{h}:\t{self.header[h]}")
 
     def get_section_symbol_in(self, symbol: str) -> Section:
         """
@@ -75,7 +79,7 @@ class ELFMan:
         """
         section_index = self.get_section_index_by_symbol(symbol)
         section = self.get_section_by_index(section_index)
-        logging.debug("[!] symbol [ {} ] in section: {}".format(symbol, section.name))
+        logging.debug(f"[!] symbol [ {symbol} ] in section: {section.name}")
         return section
 
     def get_section_index_by_symbol(self, symbol: str) -> int:
@@ -128,7 +132,7 @@ class ELFMan:
         """
         entry = self.get_symbol_entry(symbol)
         symbol_address = int(entry.get(ELFMan.ST_VALUE))
-        logging.debug("[!] symbol address: {}".format(hex(symbol_address)))
+        logging.debug(f"[!] symbol address: {hex(symbol_address)}")
         return symbol_address
 
     def get_symbol_offset(self, symbol: str) -> int:
@@ -146,24 +150,53 @@ class ELFMan:
 
     def _get_section_addr(self, section: Section) -> int:
         section_addr = int(section.header.sh_addr)
-        logging.debug("[!] section address: {}".format(hex(section_addr)))
+        logging.debug(f"[!] section address: {hex(section_addr)}")
         return section_addr
 
     def _get_section_offset(self, section: Section) -> int:
         return section.header.sh_offset
 
-    def read_bytes(self, start: int, size: int):
+    def read_bytes(self, offset: int, size: int):
         """
-        Read the `size` of bytes from the `start` position
+        Read the `size` of bytes from the `offset`
           * Make sure the file pointer gets reset at the end of the function
 
-        :param start: offset in file to start reading bytes
+        :param offset: offset in file to start reading bytes
         :param size: how many bytes to read
         """
-        self.file.seek(start)
+        if not self._verify_offset(offset):
+            return
+
+        self.file.seek(offset)
         data = self.file.read(size)
         print(data)
         self.file.seek(0)
+
+    def write_bytes(self, offset: int, data: Union[str, bytes]):
+        if not self._verify_offset(offset):
+            return
+
+        buffer_len = 10
+        self.file.seek(offset)
+        before = self.file.read(len(data))
+        buffer = self.file.read(buffer_len)
+        print("Bytes before overwriting:")
+        print(CBLUE + f"{before}" + CRESET + f"{buffer}")
+        self.file.seek(offset)
+        self.file.write(data.encode("utf-8"))
+        self.file.seek(offset)
+        after = self.file.read(len(data))
+        buffer = self.file.read(buffer_len)
+        print(f"Bytes after overwriting:")
+        print(CGREEN + f"{after}" + CRESET + f"{buffer}")
+
+    def _verify_offset(self, offset: int) -> bool:
+        file_size = Path(self.file_name).stat().st_size
+        if offset > file_size:
+            print(f"[-] provided offset [{offset}] is out of range, file size: {file_size}")
+            return False
+
+        return True
 
     def __del__(self):
         """
@@ -173,3 +206,9 @@ class ELFMan:
             self.file.close()
         except IOError:
             pass
+        except AttributeError:
+            pass
+
+
+def enable_debug():
+    logging.basicConfig(level=logging.DEBUG)
